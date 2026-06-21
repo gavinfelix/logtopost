@@ -1,91 +1,169 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+
+type Platform = 'x' | 'linkedin';
+
+const platforms: Array<{ id: Platform; label: string; hint: string }> = [
+  { id: 'x', label: 'X', hint: 'Short & sharp' },
+  { id: 'linkedin', label: 'LinkedIn', hint: 'Detailed & professional' },
+];
+
+const placeholders: Record<Platform, string> = {
+  x: 'Your publish-ready post will appear here.',
+  linkedin: 'Your publish-ready LinkedIn post will appear here.',
+};
 
 export default function HomePage() {
   const [inputLog, setInputLog] = useState('');
+  const [platform, setPlatform] = useState<Platform>('x');
+  const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [outputTweet, setOutputTweet] = useState('AI 润色后的推文草稿将在这里流式打印出来...');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const abortController = useRef<AbortController | null>(null);
 
-  const handleGenerate = () => {
+  async function handleGenerate() {
+    const log = inputLog.trim();
+    if (!log || loading) return;
+
+    abortController.current?.abort();
+    const controller = new AbortController();
+    abortController.current = controller;
     setLoading(true);
-    // TODO: 后面对接 Next.js Route Handler 路由 API
-    setTimeout(() => {
-      setOutputTweet(
-        '🚀 Just shipped a major updates!\n\nFixed that annoying hydration error in page.tsx. The workflow is now 10x smoother. \n\n#BuildInPublic #IndieHacker',
-      );
-      setLoading(false);
-    }, 1200);
-  };
+    setOutput('');
+    setError('');
+    setCopied(false);
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log, platform }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? 'Generation failed. Please try again.');
+      }
+      if (!response.body) throw new Error('The response stream is unavailable.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        setOutput((current) => current + decoder.decode(value, { stream: true }));
+      }
+    } catch (caughtError) {
+      if ((caughtError as Error).name !== 'AbortError') {
+        setError(caughtError instanceof Error ? caughtError.message : 'Generation failed. Please try again.');
+      }
+    } finally {
+      if (abortController.current === controller) {
+        setLoading(false);
+        abortController.current = null;
+      }
+    }
+  }
+
+  async function handleCopy() {
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError('Could not access your clipboard. Please copy the post manually.');
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-between p-6 antialiased selection:bg-indigo-500/30">
-      <header className="max-w-6xl w-full mx-auto flex justify-between items-center py-4 border-b border-neutral-800">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
-            G
+    <main className="min-h-screen bg-[#08090b] text-neutral-100 selection:bg-violet-500/30">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 sm:px-8">
+        <header className="flex h-20 items-center justify-between border-b border-white/[0.07]">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-500/15">G</div>
+            <span className="text-lg font-semibold tracking-tight">GitToPost<span className="text-violet-400">.ai</span></span>
           </div>
-          <span className="font-semibold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
-            GitToPost<span className="text-indigo-400 font-mono text-sm ml-1">.ai</span>
-          </span>
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-xs text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-full font-mono">
-            v0.1.0 MVP
-          </span>
-        </div>
-      </header>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] text-neutral-400">MVP · v0.1</span>
+        </header>
 
-      <section className="max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 my-auto py-8">
-        <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-5 flex flex-col space-y-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-neutral-300 flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
-              <span>Paste Git Log / Commit / Bug Report</span>
-            </label>
+        <section className="flex flex-1 flex-col py-12 lg:py-16">
+          <div className="mb-10 max-w-2xl">
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.22em] text-violet-400">From dev log to social post</p>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Ship the code. Share the story.</h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-neutral-400">Turn commits, bug fixes, and build notes into a post that is ready to publish.</p>
           </div>
-          <textarea
-            value={inputLog}
-            onChange={(e) => setInputLog(e.target.value)}
-            placeholder="e.g., git log -1&#10;commit ae87f6... &#10;fix: resolved page.tsx rendering dynamic hydration failure by adding suppression attributes."
-            className="w-full flex-1 min-h-[300px] bg-neutral-950/60 border border-neutral-800 rounded-xl p-4 text-sm font-mono text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-indigo-500/50 transition-colors resize-none"
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !inputLog}
-            className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 font-medium text-sm rounded-xl transition-all shadow-md active:scale-[0.99] flex items-center justify-center space-x-2"
-          >
-            {loading ? (
-              <span className="h-4 w-4 border-2 border-neutral-500 border-t-neutral-900 rounded-full animate-spin" />
-            ) : (
-              <span>Generate Build-in-Public Post</span>
-            )}
-          </button>
-        </div>
 
-        <div className="bg-neutral-900/30 border border-neutral-800 border-dashed rounded-2xl p-5 flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-neutral-400 flex items-center space-x-2">
-              <span>𝕏 Preview Draft</span>
-            </span>
-          </div>
-          <div className="w-full flex-1 min-h-[300px] bg-neutral-950/40 border border-neutral-800 rounded-xl p-5 text-sm text-neutral-300 font-sans whitespace-pre-wrap leading-relaxed shadow-inner">
-            {outputTweet}
-          </div>
-          <div className="flex space-x-3">
-            <button className="flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 font-medium text-xs rounded-lg transition-colors">
-              Copy to Clipboard
-            </button>
-            <button className="flex-1 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/20 font-medium text-xs rounded-lg transition-colors">
-              Publish to 𝕏
-            </button>
-          </div>
-        </div>
-      </section>
+          <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-2">
+            <section className="flex min-h-[470px] flex-col rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5 sm:p-6">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-neutral-100">Development log</p>
+                  <p className="mt-1 text-xs text-neutral-500">Paste a commit, bug fix, or build update</p>
+                </div>
+                <span className="font-mono text-[11px] text-neutral-600">{inputLog.length.toLocaleString()} / 12,000</span>
+              </div>
 
-      <footer className="max-w-6xl w-full mx-auto text-center py-4 text-xs text-neutral-600 font-mono border-t border-neutral-900">
-        {'Built in public by a cold developer.'}
-      </footer>
+              <textarea
+                aria-label="Development log"
+                value={inputLog}
+                maxLength={12000}
+                onChange={(event) => setInputLog(event.target.value)}
+                placeholder={'feat: added streaming generation to the post editor\n\n- connected the AI route\n- handled loading and error states\n- added one-click copy'}
+                className="min-h-64 flex-1 resize-none rounded-xl border border-white/[0.08] bg-black/25 p-4 font-mono text-[13px] leading-6 text-neutral-300 outline-none transition placeholder:text-neutral-700 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/10"
+              />
+
+              <fieldset className="mt-5">
+                <legend className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Publish to</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  {platforms.map((item) => {
+                    const selected = platform === item.id;
+                    return (
+                      <button key={item.id} type="button" aria-pressed={selected} onClick={() => setPlatform(item.id)} className={`rounded-xl border px-4 py-3 text-left transition ${selected ? 'border-violet-500/60 bg-violet-500/10 text-white' : 'border-white/[0.08] bg-white/[0.025] text-neutral-400 hover:border-white/15 hover:bg-white/[0.05]'}`}>
+                        <span className="block text-sm font-medium">{item.id === 'x' ? '𝕏' : 'in'}&nbsp;&nbsp;{item.label}</span>
+                        <span className="mt-1 block text-[11px] text-neutral-500">{item.hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <button type="button" onClick={handleGenerate} disabled={loading || !inputLog.trim()} className="mt-5 flex h-12 items-center justify-center gap-2 rounded-xl bg-white text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200 active:scale-[0.995] disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500">
+                {loading && <span className="size-4 animate-spin rounded-full border-2 border-neutral-500 border-t-neutral-950" />}
+                {loading ? 'Writing your post…' : 'Generate post'}
+                {!loading && <span aria-hidden="true">→</span>}
+              </button>
+            </section>
+
+            <section className="flex min-h-[470px] flex-col rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-100">Post preview</p>
+                  <p className="mt-1 text-xs text-neutral-500">{platform === 'x' ? 'X post' : 'LinkedIn post'} · Default builder voice</p>
+                </div>
+                {loading && <span className="flex items-center gap-2 text-xs text-violet-400"><span className="size-1.5 animate-pulse rounded-full bg-violet-400" />Streaming</span>}
+              </div>
+
+              <div aria-live="polite" className="relative min-h-72 flex-1 rounded-xl border border-dashed border-white/[0.09] bg-black/20 p-5 text-[15px] leading-7 text-neutral-300 whitespace-pre-wrap">
+                {output || <div className="flex h-full min-h-60 items-center justify-center text-center text-sm text-neutral-600"><div><div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500">✦</div>{placeholders[platform]}</div></div>}
+                {loading && output && <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-violet-400 align-middle" />}
+              </div>
+
+              {error && <p role="alert" className="mt-3 rounded-lg border border-red-500/15 bg-red-500/[0.07] px-3 py-2 text-xs text-red-300">{error}</p>}
+
+              <button type="button" onClick={handleCopy} disabled={!output || loading} className="mt-5 flex h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-medium text-neutral-200 transition hover:border-white/20 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:text-neutral-600 disabled:hover:border-white/10 disabled:hover:bg-white/[0.04]">
+                <span aria-hidden="true">{copied ? '✓' : '▣'}</span>
+                {copied ? 'Copied' : 'Copy post'}
+              </button>
+            </section>
+          </div>
+        </section>
+
+        <footer className="border-t border-white/[0.06] py-6 text-center font-mono text-[11px] text-neutral-700">Built for developers who ship.</footer>
+      </div>
     </main>
   );
 }
