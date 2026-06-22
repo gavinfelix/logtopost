@@ -97,42 +97,47 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6">
-        <header className="flex h-12 shrink-0 items-center justify-between border-b">
+    <main className="relative flex h-dvh flex-col overflow-hidden bg-background text-foreground selection:bg-violet-500/30">
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 size-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[120px]" />
+        <div className="absolute right-1/4 bottom-1/3 size-[400px] translate-x-1/4 rounded-full bg-violet-500/10 blur-[100px]" />
+      </div>
+
+      <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07]">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-500/20">
               G
             </div>
             <span className="text-base font-semibold tracking-tight">
-              GitToPost<span className="text-muted-foreground">.ai</span>
+              GitToPost<span className="text-violet-400">.ai</span>
             </span>
           </div>
-          <Badge variant="outline" className="font-mono text-[10px]">
+          <Badge variant="outline" className="border-white/10 bg-white/[0.04] font-mono text-[10px] text-neutral-400">
             MVP · v0.1
           </Badge>
         </header>
 
         <section className="flex min-h-0 flex-1 flex-col gap-3 py-3">
           <div className="shrink-0 space-y-1">
-            <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-widest">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-violet-400">
               From dev log to social post
-            </Badge>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Ship the code. Share the story.
             </h1>
-            <p className="max-w-xl text-sm text-muted-foreground">
+            <p className="max-w-xl text-sm text-neutral-400">
               Turn commits, bug fixes, and build notes into a post that is ready to publish.
             </p>
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2">
-            <Card className="flex min-h-0 flex-col py-3 [--card-spacing:--spacing(3)]">
+            <Card className="flex min-h-0 flex-col border border-white/[0.08] bg-zinc-950/80 py-3 ring-0 backdrop-blur-sm [--card-spacing:--spacing(3)]">
               <CardHeader className="pb-0">
                 <CardTitle>Development log</CardTitle>
-                <CardDescription>Paste a commit, bug fix, or build update</CardDescription>
+                <CardDescription className="text-neutral-500">Paste a commit, bug fix, or build update</CardDescription>
                 <CardAction>
-                  <span className="font-mono text-[10px] text-muted-foreground">
+                  <span className="font-mono text-[10px] text-neutral-600">
                     {inputLog.length.toLocaleString()} / 12,000
                   </span>
                 </CardAction>
@@ -147,11 +152,11 @@ export default function HomePage() {
                   placeholder={
                     'feat: added streaming generation to the post editor\n\n- connected the AI route\n- handled loading and error states\n- added one-click copy'
                   }
-                  className="min-h-0 flex-1 resize-none font-mono text-xs leading-5 field-sizing-fixed"
+                  className="min-h-0 flex-1 resize-none border-white/[0.08] bg-black/40 font-mono text-xs leading-5 text-neutral-300 field-sizing-fixed placeholder:text-neutral-600 focus-visible:border-violet-500/50 focus-visible:ring-violet-500/15"
                 />
 
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  <Label className="text-xs uppercase tracking-wider text-neutral-500">
                     Publish to
                   </Label>
                   <ToggleGroup
@@ -167,12 +172,12 @@ export default function HomePage() {
                       <ToggleGroupItem
                         key={item.id}
                         value={item.id}
-                        className="h-auto flex-col items-start gap-0.5 px-3 py-2"
+                        className="h-auto flex-col items-start gap-0.5 border-white/[0.08] bg-white/[0.025] px-3 py-2 hover:border-white/15 hover:bg-white/[0.05] aria-pressed:border-violet-500/60 aria-pressed:bg-violet-500/10 aria-pressed:text-white aria-pressed:shadow-[0_0_24px_rgba(139,92,246,0.12)]"
                       >
                         <span className="text-sm font-medium">
                           {item.id === 'x' ? '𝕏' : 'in'}&nbsp;&nbsp;{item.label}
                         </span>
-                        <span className="text-[10px] font-normal text-muted-foreground">
+                        <span className="text-[10px] font-normal text-neutral-500">
                           {item.hint}
                         </span>
                       </ToggleGroupItem>
@@ -184,7 +189,7 @@ export default function HomePage() {
                   type="button"
                   onClick={handleGenerate}
                   disabled={loading || !inputLog.trim()}
-                  className="h-9 w-full"
+                  className="h-9 w-full bg-white text-neutral-950 shadow-[0_0_32px_rgba(139,92,246,0.15)] hover:bg-neutral-200 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:shadow-none"
                   size="lg"
                 >
                   {loading ? <Spinner /> : null}
@@ -194,16 +199,16 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-h-0 flex-col py-3 [--card-spacing:--spacing(3)]">
+            <Card className="flex min-h-0 flex-col border border-white/[0.08] bg-zinc-950/60 py-3 ring-0 backdrop-blur-sm [--card-spacing:--spacing(3)]">
               <CardHeader className="pb-0">
                 <CardTitle>Post preview</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-neutral-500">
                   {platform === 'x' ? 'X post' : 'LinkedIn post'} · Default builder voice
                 </CardDescription>
                 {loading ? (
                   <CardAction>
-                    <Badge variant="secondary" className="gap-1.5">
-                      <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                    <Badge variant="outline" className="gap-1.5 border-violet-500/20 bg-violet-500/10 text-violet-300">
+                      <span className="size-1.5 animate-pulse rounded-full bg-violet-400" />
                       Streaming
                     </Badge>
                   </CardAction>
@@ -213,18 +218,18 @@ export default function HomePage() {
               <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
                 <div
                   aria-live="polite"
-                  className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-dashed bg-muted/30 p-3 text-sm leading-6 whitespace-pre-wrap"
+                  className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-dashed border-white/[0.09] bg-black/30 p-3 text-sm leading-6 text-neutral-300 whitespace-pre-wrap"
                 >
                   {output ? (
                     <p className="min-h-0 flex-1 overflow-hidden">
                       {output}
                       {loading ? (
-                        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-primary align-middle" />
+                        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-violet-400 align-middle" />
                       ) : null}
                     </p>
                   ) : (
-                    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-                      <div className="flex size-8 items-center justify-center rounded-full border bg-muted">
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-neutral-600">
+                      <div className="flex size-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500">
                         <Sparkles className="size-3.5" />
                       </div>
                       {placeholders[platform]}
@@ -233,8 +238,8 @@ export default function HomePage() {
                 </div>
 
                 {error ? (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
+                  <Alert variant="destructive" className="border-red-500/15 bg-red-500/[0.07]">
+                    <AlertDescription className="text-red-300">{error}</AlertDescription>
                   </Alert>
                 ) : null}
 
@@ -243,7 +248,7 @@ export default function HomePage() {
                   variant="outline"
                   onClick={handleCopy}
                   disabled={!output || loading}
-                  className="h-9 w-full"
+                  className="h-9 w-full border-white/10 bg-white/[0.04] text-neutral-200 hover:border-white/20 hover:bg-white/[0.07] disabled:text-neutral-600"
                   size="lg"
                 >
                   {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
@@ -254,7 +259,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="shrink-0 border-t py-2 text-center font-mono text-[10px] text-muted-foreground">
+        <footer className="shrink-0 border-t border-white/[0.06] py-2 text-center font-mono text-[10px] text-neutral-700">
           Built for developers who ship.
         </footer>
       </div>
