@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 
 type Platform = 'x' | 'linkedin';
@@ -24,7 +23,7 @@ const placeholders: Record<Platform, string> = {
 };
 
 const panelClassName =
-  'flex min-h-0 flex-col rounded-2xl border border-white/[0.08] p-5 sm:p-6';
+  'flex min-h-0 flex-col gap-3 rounded-2xl border border-white/[0.08] p-4 sm:p-5';
 
 export default function HomePage() {
   const [inputLog, setInputLog] = useState('');
@@ -99,7 +98,7 @@ export default function HomePage() {
         <div className="absolute right-1/4 bottom-1/3 size-[360px] translate-x-1/4 rounded-full bg-violet-500/8 blur-[100px]" />
       </div>
 
-      <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-5 sm:px-8">
+      <div className="relative mx-auto flex h-full w-full max-w-[90rem] flex-col px-5 sm:px-8 lg:px-10">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.07] sm:h-16">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-500/20">
@@ -115,21 +114,21 @@ export default function HomePage() {
         </header>
 
         <section className="flex min-h-0 flex-1 flex-col py-4 sm:py-5">
-          <div className="mb-5 max-w-2xl shrink-0 space-y-2 sm:mb-6">
+          <div className="mb-5 max-w-3xl shrink-0 space-y-2 sm:mb-6">
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-400">
               From dev log to social post
             </p>
             <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
               Ship the code. Share the story.
             </h1>
-            <p className="max-w-xl text-sm leading-6 text-neutral-400 sm:text-base sm:leading-7">
+            <p className="max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base sm:leading-7">
               Turn commits, bug fixes, and build notes into a post that is ready to publish.
             </p>
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-2">
             <section className={`${panelClassName} bg-white/[0.035]`}>
-              <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="flex shrink-0 items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-neutral-100">Development log</p>
                   <p className="mt-1 text-xs text-neutral-500">
@@ -159,43 +158,44 @@ export default function HomePage() {
                 )}
               />
 
-              <fieldset className="mt-4 shrink-0">
-                <legend className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
+              <div className="shrink-0 space-y-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                   Publish to
-                </legend>
-                <ToggleGroup
-                  value={[platform]}
-                  onValueChange={(values) => {
-                    const next = values[0];
-                    if (next === 'x' || next === 'linkedin') setPlatform(next);
-                  }}
-                  variant="outline"
-                  className="grid w-full grid-cols-2 gap-3"
-                  spacing={0}
-                >
-                  {platforms.map((item) => (
-                    <ToggleGroupItem
-                      key={item.id}
-                      value={item.id}
-                      className="h-auto flex-col items-start gap-1 rounded-xl border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left hover:border-white/15 hover:bg-white/[0.05] aria-pressed:border-violet-500 aria-pressed:bg-violet-500/15 aria-pressed:text-white aria-pressed:shadow-[0_0_28px_rgba(139,92,246,0.18)]"
-                    >
-                      <span className="text-sm font-medium">
-                        {item.id === 'x' ? '𝕏' : 'in'}&nbsp;&nbsp;{item.label}
-                      </span>
-                      <span className="text-[11px] font-normal text-neutral-500">
-                        {item.hint}
-                      </span>
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </fieldset>
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {platforms.map((item) => {
+                    const selected = platform === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => setPlatform(item.id)}
+                        className={cn(
+                          'flex min-h-14 w-full flex-col items-start justify-center gap-0.5 rounded-xl border px-3.5 py-2.5 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30',
+                          selected
+                            ? 'border-violet-500 bg-violet-500/15 text-white shadow-[0_0_28px_rgba(139,92,246,0.18)]'
+                            : 'border-white/[0.08] bg-white/[0.025] text-neutral-300 hover:border-white/15 hover:bg-white/[0.05]',
+                        )}
+                      >
+                        <span className="text-sm font-medium leading-tight">
+                          {item.id === 'x' ? '𝕏' : 'in'}&nbsp;&nbsp;{item.label}
+                        </span>
+                        <span className="text-[10px] leading-tight font-normal text-neutral-500 sm:text-[11px]">
+                          {item.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <Button
                 type="button"
                 onClick={handleGenerate}
                 disabled={loading || !inputLog.trim()}
                 className={cn(
-                  'mt-4 h-11 w-full shrink-0 text-sm font-semibold sm:h-12',
+                  'h-11 w-full shrink-0 rounded-xl text-sm font-semibold',
                   inputLog.trim() && !loading
                     ? 'border-transparent bg-white text-neutral-950 shadow-[0_0_32px_rgba(139,92,246,0.2)] hover:bg-neutral-200'
                     : 'border-white/10 bg-white/[0.04] text-neutral-500 hover:border-white/20 hover:bg-white/[0.07]',
@@ -209,7 +209,7 @@ export default function HomePage() {
             </section>
 
             <section className={`${panelClassName} bg-white/[0.02]`}>
-              <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="flex shrink-0 items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-neutral-100">Post preview</p>
                   <p className="mt-1 text-xs text-neutral-500">
@@ -227,7 +227,7 @@ export default function HomePage() {
               <div
                 aria-live="polite"
                 className={cn(
-                  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-black/20 p-4 text-[15px] leading-7 text-neutral-300 whitespace-pre-wrap transition-[border-color,box-shadow]',
+                  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-black/20 p-4 text-sm leading-6 text-neutral-300 whitespace-pre-wrap transition-[border-color,box-shadow] sm:text-[15px] sm:leading-7',
                   output.length > 0
                     ? 'border-violet-500/60 shadow-[0_0_28px_rgba(139,92,246,0.14)]'
                     : 'border-white/[0.08]',
@@ -241,9 +241,9 @@ export default function HomePage() {
                     ) : null}
                   </p>
                 ) : (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-neutral-600">
-                    <div className="flex size-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500">
-                      <Sparkles className="size-4" />
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2 text-center text-xs text-neutral-600 sm:text-sm">
+                    <div className="flex size-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500 sm:size-10">
+                      <Sparkles className="size-3.5 sm:size-4" />
                     </div>
                     {placeholders[platform]}
                   </div>
@@ -251,7 +251,7 @@ export default function HomePage() {
               </div>
 
               {error ? (
-                <Alert variant="destructive" className="mt-3 shrink-0 border-red-500/15 bg-red-500/[0.07]">
+                <Alert variant="destructive" className="shrink-0 border-red-500/15 bg-red-500/[0.07]">
                   <AlertDescription className="text-red-300">{error}</AlertDescription>
                 </Alert>
               ) : null}
@@ -261,7 +261,7 @@ export default function HomePage() {
                 variant="outline"
                 onClick={handleCopy}
                 disabled={!output || loading}
-                className="mt-4 h-11 w-full shrink-0 border-white/10 bg-white/[0.04] text-sm font-medium text-neutral-200 hover:border-white/20 hover:bg-white/[0.07] disabled:text-neutral-600 sm:h-12"
+                className="h-11 w-full shrink-0 rounded-xl border-white/10 bg-white/[0.04] text-sm font-medium text-neutral-200 hover:border-white/20 hover:bg-white/[0.07] disabled:text-neutral-600"
                 size="lg"
               >
                 {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
