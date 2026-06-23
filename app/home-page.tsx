@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { ArrowRight, Check, Copy, Sparkles } from 'lucide-react';
+import { type FormEvent, useRef, useState } from 'react';
+import { ArrowRight, Check, Copy, GitCommit, MoreHorizontal, Sparkles } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -27,13 +27,47 @@ const panelClassName =
 
 export default function HomePage() {
   const [inputLog, setInputLog] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
   const [platform, setPlatform] = useState<Platform>('x');
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const abortController = useRef<AbortController | null>(null);
+
+  async function handleImportCommit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const url = githubUrl.trim();
+    if (!url || importing) return;
+
+    setImporting(true);
+    setError('');
+    setCopied(false);
+
+    try {
+      const response = await fetch('/api/github/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const body = (await response.json().catch(() => null)) as
+        | { log?: string; error?: string }
+        | null;
+
+      if (!response.ok || !body?.log) {
+        throw new Error(body?.error ?? 'Could not import this commit.');
+      }
+
+      setInputLog(body.log);
+      setOutput('');
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not import this commit.');
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function handleGenerate() {
     const log = inputLog.trim();
@@ -94,8 +128,8 @@ export default function HomePage() {
   return (
     <main className="relative flex h-dvh flex-col overflow-hidden bg-background text-foreground selection:bg-violet-500/30">
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/3 size-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/8 blur-[120px]" />
-        <div className="absolute right-1/4 bottom-1/3 size-[360px] translate-x-1/4 rounded-full bg-violet-500/8 blur-[100px]" />
+        <div className="absolute top-[18%] left-[34%] size-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[130px]" />
+        <div className="absolute right-[12%] bottom-[8%] size-[440px] translate-x-1/4 rounded-full bg-violet-500/10 blur-[120px]" />
       </div>
 
       <div className="relative mx-auto flex h-full w-full max-w-[90rem] flex-col px-5 sm:px-8 lg:px-10">
@@ -127,7 +161,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-2">
-            <section className={`${panelClassName} bg-white/[0.035]`}>
+            <section className={`${panelClassName} bg-neutral-900/40`}>
               <div className="flex shrink-0 items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-neutral-100">Development log</p>
@@ -140,6 +174,31 @@ export default function HomePage() {
                 </span>
               </div>
 
+              <form onSubmit={handleImportCommit} className="flex shrink-0 gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <GitCommit className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-neutral-600" />
+                  <input
+                    type="url"
+                    aria-label="Public GitHub commit URL"
+                    value={githubUrl}
+                    maxLength={500}
+                    onChange={(event) => setGithubUrl(event.target.value)}
+                    placeholder="Paste a public GitHub commit URL"
+                    className="h-9 w-full rounded-lg border border-white/[0.08] bg-neutral-950/70 pr-3 pl-9 text-xs text-neutral-300 outline-none placeholder:text-neutral-700 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/15"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  disabled={importing || !githubUrl.trim()}
+                  className="h-9 shrink-0 rounded-lg border-white/10 bg-white/[0.04] px-3 text-xs text-neutral-300 hover:border-white/20 hover:bg-white/[0.07]"
+                >
+                  {importing ? <Spinner /> : null}
+                  {importing ? 'Importing' : 'Import'}
+                </Button>
+              </form>
+
               <Textarea
                 aria-label="Development log"
                 value={inputLog}
@@ -151,9 +210,9 @@ export default function HomePage() {
                   'feat: added streaming generation to the post editor\n\n- connected the AI route\n- handled loading and error states\n- added one-click copy'
                 }
                 className={cn(
-                  'min-h-0 flex-1 resize-none rounded-xl bg-black/25 p-4 font-mono text-[13px] leading-6 text-neutral-300 field-sizing-fixed placeholder:text-neutral-700 transition-[border-color,box-shadow]',
+                  'min-h-0 flex-1 resize-none rounded-xl bg-neutral-950/80 p-4 font-mono text-[13px] leading-6 text-neutral-300 field-sizing-fixed placeholder:text-neutral-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.025),inset_0_14px_34px_rgba(0,0,0,0.32)] transition-[border-color,box-shadow]',
                   inputLog.length > 0 || inputFocused
-                    ? 'border-violet-500/60 shadow-[0_0_28px_rgba(139,92,246,0.14)] focus-visible:border-violet-500/70 focus-visible:ring-violet-500/20'
+                    ? 'border-violet-500/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.025),inset_0_14px_34px_rgba(0,0,0,0.32),0_0_28px_rgba(139,92,246,0.14)] focus-visible:border-violet-500/70 focus-visible:ring-violet-500/20'
                     : 'border-white/[0.08] focus-visible:border-violet-500/50 focus-visible:ring-violet-500/15',
                 )}
               />
@@ -211,9 +270,11 @@ export default function HomePage() {
             <section className={`${panelClassName} bg-white/[0.02]`}>
               <div className="flex shrink-0 items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-neutral-100">Post preview</p>
+                  <p className="text-sm font-medium text-neutral-100">
+                    {platform === 'x' ? 'X Preview' : 'LinkedIn Preview'}
+                  </p>
                   <p className="mt-1 text-xs text-neutral-500">
-                    {platform === 'x' ? 'X post' : 'LinkedIn post'} - Default builder voice
+                    Native preview - Default builder voice
                   </p>
                 </div>
                 {loading ? (
@@ -227,27 +288,50 @@ export default function HomePage() {
               <div
                 aria-live="polite"
                 className={cn(
-                  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-black/20 p-4 text-sm leading-6 text-neutral-300 whitespace-pre-wrap transition-[border-color,box-shadow] sm:text-[15px] sm:leading-7',
+                  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-neutral-950/75 p-4 text-sm leading-6 text-neutral-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_18px_50px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow] sm:text-[15px] sm:leading-7',
                   output.length > 0
-                    ? 'border-violet-500/60 shadow-[0_0_28px_rgba(139,92,246,0.14)]'
-                    : 'border-white/[0.08]',
+                    ? 'border-violet-500/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_0_28px_rgba(139,92,246,0.12)]'
+                    : 'border-white/[0.09]',
                 )}
               >
-                {output ? (
-                  <p className="min-h-0 flex-1 overflow-hidden">
-                    {output}
-                    {loading ? (
-                      <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-violet-400 align-middle" />
-                    ) : null}
-                  </p>
-                ) : (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2 text-center text-xs text-neutral-600 sm:text-sm">
-                    <div className="flex size-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500 sm:size-10">
-                      <Sparkles className="size-3.5 sm:size-4" />
-                    </div>
-                    {placeholders[platform]}
+                <div className="flex shrink-0 items-start gap-3 border-b border-white/[0.06] pb-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-neutral-600 to-neutral-800 text-xs font-semibold text-neutral-200 shadow-inner sm:size-10">
+                    YH
                   </div>
-                )}
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-semibold text-neutral-100">Your Handle</span>
+                      <span className="truncate text-xs text-neutral-500">@username</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-neutral-600">
+                      {platform === 'x' ? 'Just now' : 'Builder · Just now'}
+                    </p>
+                  </div>
+                  {platform === 'x' ? (
+                    <span className="text-base font-medium text-neutral-400">𝕏</span>
+                  ) : (
+                    <span className="rounded bg-[#0a66c2] px-1 py-0.5 text-[10px] font-bold leading-none text-white">in</span>
+                  )}
+                  <MoreHorizontal className="size-4 shrink-0 text-neutral-600" />
+                </div>
+
+                <div className="flex min-h-0 flex-1 flex-col pt-3 whitespace-pre-wrap">
+                  {output ? (
+                    <p className="min-h-0 flex-1 overflow-hidden">
+                      {output}
+                      {loading ? (
+                        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-violet-400 align-middle" />
+                      ) : null}
+                    </p>
+                  ) : (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2 text-center text-xs text-neutral-600 sm:text-sm">
+                      <div className="flex size-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-neutral-500 sm:size-10">
+                        <Sparkles className="size-3.5 sm:size-4" />
+                      </div>
+                      {placeholders[platform]}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {error ? (
