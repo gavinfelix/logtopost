@@ -27,6 +27,7 @@ function parseCommitUrl(value: string) {
     return null;
   }
 
+  // Only github.com commit URLs are accepted so we never fetch arbitrary user-supplied hosts (SSRF).
   if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'github.com') {
     return null;
   }
