@@ -122,6 +122,7 @@ export async function POST(request: Request) {
     'X-GitHub-Api-Version': GITHUB_API_VERSION,
     'User-Agent': 'GitToPost.ai',
   };
+  // Optional: raises the anonymous 60 req/hr limit and enables access to private repos.
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
