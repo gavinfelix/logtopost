@@ -36,6 +36,7 @@ function parseCommitUrl(value: string) {
   if (segments.length !== 4 || segments[2] !== 'commit') return null;
 
   const [owner, repository, , sha] = segments;
+  // Allow only GitHub-safe repo names and hex SHAs before they are interpolated into the API path.
   const safeSegment = /^[A-Za-z0-9_.-]+$/;
   if (!safeSegment.test(owner) || !safeSegment.test(repository) || !/^[A-Fa-f0-9]{7,40}$/.test(sha)) {
     return null;
