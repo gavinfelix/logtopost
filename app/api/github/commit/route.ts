@@ -94,6 +94,7 @@ function buildDevelopmentLog(
     }
   }
 
+  // Cap the log length to match /api/generate's input limit.
   return lines.join('\n').slice(0, MAX_LOG_LENGTH);
 }
 
