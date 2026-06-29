@@ -67,6 +67,7 @@ function buildDevelopmentLog(
   const additions = asNumber(data.stats?.additions);
   const deletions = asNumber(data.stats?.deletions);
   const files = Array.isArray(data.files) ? data.files : [];
+  // Large commits can list hundreds of files; keep the generated log readable.
   const visibleFiles = files.slice(0, MAX_FILES);
 
   const lines = [
