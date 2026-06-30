@@ -33,6 +33,7 @@ function parseCommitUrl(value: string) {
   }
 
   const segments = url.pathname.split('/').filter(Boolean);
+  // Accept only /owner/repo/commit/sha — reject pulls, compare views, and other GitHub paths.
   if (segments.length !== 4 || segments[2] !== 'commit') return null;
 
   const [owner, repository, , sha] = segments;
